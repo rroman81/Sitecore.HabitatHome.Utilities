@@ -10,7 +10,8 @@ $json = Get-Content -Raw $configurationFile |  ConvertFrom-Json
 
 $assets = $json.assets
 $assets.root = "$PSScriptRoot\assets"
-$assets.downloadFolder = Join-Path $assets.root "Downloads"
+$assets.packageRepository = "C:\repository"
+$assets.downloadFolder = $assets.packageRepository
 
 # Settings
 
@@ -30,7 +31,6 @@ $commerce.brainTreeAccountMerchandId = ""
 $commerce.brainTreeAccountPublicKey = ""
 $commerce.brainTreeAccountPrivateKey = ""
 
-$commerce.identityServerName = "SitecoreIdentityServer_$($site.prefix)"
 
 # XConnect Parameters
 $xConnect = $json.settings.xConnect

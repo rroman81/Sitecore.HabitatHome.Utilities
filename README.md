@@ -29,10 +29,10 @@ See the [README.md](Warmup/README.md) in the Warmup folder for a detailed descri
 
 The XC folder contains a set of scripts for installing Sitecore Experience Commerce 9 with all the required modules.
 
-See the [README.md](XC/Install/README.md) in the XC/install folder for a detailed description and instructions.
+See the [README.md](XC/install/README.md) in the XC/install folder for a detailed description and instructions.
 
 #### XP
 
 The XP folder contains a set of scripts for installing Sitecore Experience Platform 9 with all the required modules and certificates.
 
-See the [README.md](XP/Install/README.md) in the XP/install folder for a detailed description and instructions.
+See the [README.md](XP/install/README.md) in the XP/install folder for a detailed description and instructions.

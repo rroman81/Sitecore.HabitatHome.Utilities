@@ -22,9 +22,9 @@ $StopWatch.Start()
 Set-Location $PSScriptRoot
 $LogFolder = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($LogFolder) 
 if (!(Test-Path $LogFolder)) {
-    New-item -ItemType Directory -Path $LogFolder
+    New-Item -ItemType Directory -Path $LogFolder
 }
-$LogFile = Join-path $LogFolder $LogFileName
+$LogFile = Join-Path $LogFolder $LogFileName
 if (Test-Path $LogFile) {
     Get-Item $LogFile | Remove-Item
 }
@@ -34,7 +34,7 @@ if (!(Test-Path $ConfigurationFile)) {
     Write-Host  "Please use 'set-installation...ps1' files to generate a configuration file." -ForegroundColor Red
     Exit 1
 }
-$config = Get-Content -Raw $ConfigurationFile |  ConvertFrom-Json
+$config = Get-Content -Raw $ConfigurationFile | ConvertFrom-Json
 if (!$config) {
     throw "Error trying to load configuration!"
 }
@@ -54,12 +54,34 @@ Write-Host "*******************************************************" -Foreground
 Write-Host " Installing Sitecore" -ForegroundColor Green
 Write-Host " Sitecore: $($site.hostName)" -ForegroundColor Green
 Write-Host " xConnect: $($xConnect.siteName)" -ForegroundColor Green
+Write-Host " identityserver: $($identityServer.name)" -ForegroundColor Green
 Write-Host "*******************************************************" -ForegroundColor Green
 
+Function Get-SitecoreCredentials{
+    
+    if ($null -eq $global:credentials) {
+        if ([string]::IsNullOrEmpty($devSitecoreUsername)) {
+            $global:credentials = Get-Credential -Message "Please provide dev.sitecore.com credentials"
+        }
+        elseif (![string]::IsNullOrEmpty($devSitecoreUsername) -and ![string]::IsNullOrEmpty($devSitecorePassword)) {
+            $secpasswd = ConvertTo-SecureString $devSitecorePassword -AsPlainText -Force
+            $global:credentials = New-Object System.Management.Automation.PSCredential ($devSitecoreUsername, $secpasswd)
+        }
+        else {
+            throw "Credentials required for download"
+        }
+    }
+    $user = $global:credentials.GetNetworkCredential().UserName
+    $password = $global:credentials.GetNetworkCredential().Password
+
+    Invoke-RestMethod -Uri https://dev.sitecore.net/api/authorization -Method Post -ContentType "application/json" -Body "{username: '$user', password: '$password'}" -SessionVariable loginSession -UseBasicParsing 
+    $global:loginSession = $loginSession
+    
+}
 
 Function Install-SitecoreInstallFramework {
     #Register Assets PowerShell Repository
-    if ((Get-PSRepository | Where-Object {$_.Name -eq $assets.psRepositoryName}).count -eq 0) {
+    if ((Get-PSRepository | Where-Object { $_.Name -eq $assets.psRepositoryName }).count -eq 0) {
         Register-PSRepository -Name $assets.psRepositoryName -SourceLocation $assets.psRepository -InstallationPolicy Trusted 
     }
 
@@ -71,7 +93,7 @@ Function Install-SitecoreInstallFramework {
     
     $module = Get-Module -FullyQualifiedName @{ModuleName = "SitecoreInstallFramework"; ModuleVersion = $sifVersion }
     if (-not $module) {
-        write-host "Installing the Sitecore Install Framework, version $($assets.installerVersion)" -ForegroundColor Green
+        Write-Host "Installing the Sitecore Install Framework, version $($assets.installerVersion)" -ForegroundColor Green
         Install-Module SitecoreInstallFramework -Repository $assets.psRepositoryName -Scope CurrentUser -Force
         Import-Module SitecoreInstallFramework -Force
     }
@@ -79,7 +101,7 @@ Function Install-SitecoreInstallFramework {
 Function Download-Assets {
 
     $downloadAssets = $modules
-    $downloadFolder = $assets.root
+    $downloadFolder = $assets.packageRepository
     $packagesFolder = (Join-Path $downloadFolder "packages")
     
    
@@ -87,26 +109,10 @@ Function Download-Assets {
     if (!(Test-Path $downloadFolder)) {
         New-Item -ItemType Directory -Force -Path $downloadFolder
     }
-    if ($null -eq $credentials) {
-        if ([string]::IsNullOrEmpty($devSitecoreUsername)) {
-            $credentials = Get-Credential -Message "Please provide dev.sitecore.com credentials"
-        }
-        elseif (![string]::IsNullOrEmpty($devSitecoreUsername) -and ![string]::IsNullOrEmpty($devSitecorePassword)) {
-            $secpasswd = ConvertTo-SecureString $devSitecorePassword -AsPlainText -Force
-            $credentials = New-Object System.Management.Automation.PSCredential ($devSitecoreUsername, $secpasswd)
-        }
-        else {
-            throw "Credentials required for download"
-        }
-    }
-    $user = $credentials.GetNetworkCredential().UserName
-    $password = $Credentials.GetNetworkCredential().Password
-
-    $loginRequest = Invoke-RestMethod -Uri https://dev.sitecore.net/api/authorization -Method Post -ContentType "application/json" -Body "{username: '$user', password: '$password'}" -SessionVariable loginSession -UseBasicParsing 
-
-    $downloadJsonPath = $([io.path]::combine($sharedResourcePath,  'download-assets.json'))
+   Get-SitecoreCredentials
+    $downloadJsonPath = $([io.path]::combine($sharedResourcePath, 'download-assets.json'))
     Set-Alias sz 'C:\Program Files\7-Zip\7z.exe'
-    $package = $modules | Where-Object {$_.id -eq "xp"}
+    $package = $modules | Where-Object { $_.id -eq "xp" }
     
     Write-Host ("Downloading {0}  -  if required" -f $package.name )
         
@@ -115,7 +121,7 @@ Function Download-Assets {
     if (!(Test-Path $destination)) {
         $params = @{
             Path         = $downloadJsonPath
-            LoginSession = $loginSession
+            LoginSession = $global:loginSession
             Source       = $package.url
             Destination  = $destination
         }
@@ -198,10 +204,11 @@ Function Confirm-Prerequisites {
         throw "XConnect package $($xConnect.packagePath) not found"
     }
 }
+
 Function Install-SingleDeveloper {
+
     $singleDeveloperParams = @{
         Path                           = $sitecore.singleDeveloperConfigurationPath
-        CertificatePath                = $assets.certificatesPath
         SqlServer                      = $sql.server
         SqlAdminUser                   = $sql.adminUser
         SqlAdminPassword               = $sql.adminPassword
@@ -224,7 +231,6 @@ Function Install-SingleDeveloper {
         SolrService                    = $solr.serviceName
         Prefix                         = $site.prefix
         XConnectCertificateName        = $xconnect.siteName
-        XConnectCertificatePassword    = $sql.adminPassword
         IdentityServerCertificateName  = $identityServer.name
         IdentityServerSiteName         = $identityServer.name
         LicenseFile                    = $assets.licenseFilePath
@@ -241,8 +247,8 @@ Function Install-SingleDeveloper {
         WebRoot                        = $site.webRoot
     }
 
-    Push-Location $resourcePath
-    Install-SitecoreConfiguration @singleDeveloperParams   *>&1 | Tee-Object XP0-SingleDeveloper.log
+    Push-Location (Join-Path $resourcePath "XP0")
+    Install-SitecoreConfiguration @singleDeveloperParams 
     Pop-Location
 }
 Function Add-AppPoolMembership {

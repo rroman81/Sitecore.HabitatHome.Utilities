@@ -1,16 +1,16 @@
 ﻿{
   "Parameters": {
-	"WebRoot":{
-            "Type":"string",
-            "Description":"The physical path of the configured Web Root for the environment"
-        },
     "EngineConnectIncludeDir": {
       "Type": "string",
       "Description": "The path to the Engine Connect App_Confign directory"
     },
-    "CertificatePath": {
+    "CommerceInstallRoot": {
       "Type": "string",
-      "Description": "The full path to the Commerce Engine certificate file."
+      "Description": "The root path of commerce services."
+    },
+    "CommerceEngineCertificateName": {
+      "Type": "string",
+      "Description": "The Commerce Engine certificate name for communication between Engine and Storefront."
     },
     "CommerceServicesPostfix": {
       "Type": "string",
@@ -19,6 +19,11 @@
     "CommerceAuthoringServicesPort": {
       "Type": "string",
       "Description": "Commerce Authoring Services port"
+    },
+    "CommerceServicesHostPostfix": {
+      "Type": "string",
+      "DefaultValue": "",
+      "Description": "The postfix for Commerce Engine services host names"
     }
   },
   "Variables": {
@@ -26,10 +31,12 @@
     "CommerceShops": "[concat('CommerceShops_', parameter('CommerceServicesPostfix'))]",
     "CommerceAuthoring": "[concat('CommerceAuthoring_', parameter('CommerceServicesPostfix'))]",
     "CommerceMinions": "[concat('CommerceMinions_', parameter('CommerceServicesPostfix'))]",
-    "CommerceOpsPhysicalPath": "[joinpath(parameter('WebRoot'), variable('CommerceOps')))]",
-    "CommerceShopsPhysicalPath": "[joinpath(parameter('WebRoot'), variable('CommerceShops')))]",
-    "CommerceAuthoringPhysicalPath": "[joinpath(parameter('WebRoot'), variable('CommerceAuthoring')))]",
-    "CommerceMinionsPhysicalPath": "[joinpath(parameter('WebRoot'), variable('CommerceMinions')))]"
+    "CommerceOpsPhysicalPath": "[joinpath(parameter('CommerceInstallRoot'),  variable('CommerceOps'))]",
+    "CommerceShopsPhysicalPath": "[joinpath(parameter('CommerceInstallRoot'),  variable('CommerceShops'))]",
+    "CommerceAuthoringPhysicalPath": "[joinpath(parameter('CommerceInstallRoot'),  variable('CommerceAuthoring'))]",
+    "CommerceMinionsPhysicalPath": "[joinpath(parameter('CommerceInstallRoot'),  variable('CommerceMinions'))]",
+    "Client.Cert.Store": "cert:\\LocalMachine\\My",
+    "Security.CertificateThumbprint": "[GetCertificateThumbprint(parameter('CommerceEngineCertificateName'), variable('Client.Cert.Store'))]"
   },
   "Modules": ["InitializeCommerce"],
   "Tasks": {
@@ -37,7 +44,7 @@
       "Type": "ApplyCertificate",
       "Params": {
         "EngineConnectIncludeDir": "[parameter('EngineConnectIncludeDir')]",
-        "CertificatePath": "[parameter('CertificatePath')]",
+        "CertificateThumbprint": "[variable('Security.CertificateThumbprint')]",
         "CommerceServicesPathCollection": [
           "[variable('CommerceOpsPhysicalPath')]",
           "[variable('CommerceShopsPhysicalPath')]",
@@ -46,7 +53,16 @@
         ]
       }
     },
+    "UpdateShopsHostname": {
+      "Skip": "[not(parameter('CommerceServicesHostPostfix'))]",
+      "Type": "UpdateShopsHostname",
+      "Params": {
+        "EngineConnectIncludeDir": "[parameter('EngineConnectIncludeDir')]",
+        "CommerceServicesHostPostfix": "[parameter('CommerceServicesHostPostfix')]"
+      }
+    },
     "UpdateShopsPort": {
+      "Skip": "[parameter('CommerceServicesHostPostfix')]",
       "Type": "UpdateShopsPort",
       "Params": {
         "EngineConnectIncludeDir": "[parameter('EngineConnectIncludeDir')]",

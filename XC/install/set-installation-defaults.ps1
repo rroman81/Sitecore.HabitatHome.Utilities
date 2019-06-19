@@ -16,31 +16,28 @@ $json = [JsonMerge.JsonMerge]::MergeJson($XPConfigurationFile, $installSettingsP
 
 $assets = $json.assets
 $assets.root = "$PSScriptRoot\assets"
-$assets.downloadFolder = Join-Path $assets.root "Downloads"
+$assets.downloadFolder =  $assets.packageRepository
 
 #Commerce
-$assets.commerce.packageName = "Sitecore.Commerce.2018.07-2.2.126.zip"
-$assets.commerce.packageUrl = "https://dev.sitecore.net/~/media/F374366CA5C649C99B09D35D5EF1BFCE.ashx"
-$assets.commerce.installationFolder = Join-Path $assets.root "Commerce"
+$assets.commerce.packageName = "Sitecore.Commerce.2019.04-3.0.163.zip"
+$assets.commerce.packageUrl = "https://dev.sitecore.net/~/media/EF8EE376257142B4BDFAFF7EB1E1CA3E.ashx"
+$assets.commerce.installationFolder = Join-Path $assets.packageRepository "Commerce"
 
 
 #Commerce Files to Extract
 $sifCommerceVersion = $assets.commerce.filesToExtract | Where-Object { $_.name -eq "SIF.Sitecore.Commerce"} 
-$sifCommerceVersion.version = "1.2.14"
+$sifCommerceVersion.version = "2.0.19"
 
 $assets.commerce.sifCommerceRoot = Join-Path $assets.commerce.installationFolder $($sifCommerceVersion.name + "." + $sifCommerceVersion.version)
 
 $commerceEngineVersion = $assets.commerce.filesToExtract | Where-Object { $_.name -eq "Sitecore.Commerce.Engine"} 
-$commerceEngineVersion.version = "2.2.126"
+$commerceEngineVersion.version = "3.0.163"
 
 $commerceEngineSDKVersion = $assets.commerce.filesToExtract | Where-Object { $_.name -eq "Sitecore.Commerce.Engine.SDK"} 
-$commerceEngineSDKVersion.version = "2.2.72"
+$commerceEngineSDKVersion.version = "3.0.40"
 
 $bizFxVersion = $assets.commerce.filesToExtract | Where-Object { $_.name -eq "Sitecore.BizFX"} 
-$bizFxVersion.version = "1.2.19"
-
-$identityServerVersion = $assets.commerce.filesToExtract | Where-Object { $_.name -eq "Sitecore.IdentityServer"} 
-$identityServerVersion.version = "1.2.3"
+$bizFxVersion.version = "2.0.3"
 
 # Settings
 $site = $json.settings.site
@@ -56,7 +53,6 @@ $commerce.serviceAccountPassword = "Pu8azaCr"
 $commerce.brainTreeAccountMerchandId = ""
 $commerce.brainTreeAccountPublicKey = ""
 $commerce.brainTreeAccountPrivateKey = ""
-$commerce.identityServerName = "SitecoreIdentityServer_$($site.prefix)"
 
 # Site Settings
 $site = $json.settings.site
@@ -64,7 +60,7 @@ $site = $json.settings.site
 
 # Sitecore Parameters
 $sitecore = $json.settings.sitecore
-$json.modules = ""
+
 
 # Solr Parameters
 $solr = $json.settings.solr

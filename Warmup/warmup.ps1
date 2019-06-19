@@ -1,9 +1,9 @@
 param(
-    [string]$instance,
-    [ValidateSet('sitecore', 'xp', 'xc')]
-    [string]$demoType,
-    [string]$adminUser = 'admin',
-    [string]$adminPassword = 'b'
+    $instance = "habitathome.dev.local",
+    [ValidateSet('xp', 'xc', 'sitecore')]
+    $demoType,
+    $adminUser = "admin",
+    $adminPassword = "b"
 )
 
 $config = Get-Content -Raw -Path "$PSSCriptRoot\warmup-config.json" | ConvertFrom-Json
@@ -13,7 +13,6 @@ if ($instance -eq "") {
 else {
     $instanceName = $instance    
 }
-Write-Host $instanceName
 
 function TestStatusCode {
     param($response)
@@ -43,6 +42,7 @@ Function Get-SitecoreSession {
         [string]$password
     )
 
+    Write-Host "Logging into Sitecore" -ForegroundColor Green
     $uri = "$site/sitecore/login?fbc=1"
     $authResponse = Invoke-WebRequest -uri $uri -SessionVariable session -UseBasicParsing
     TestStatusCode $authResponse
@@ -71,14 +71,17 @@ Function RequestPage {
         [Parameter(Mandatory = $true, Position = 0)]
         [string]$url,
         [Parameter(Mandatory = $true, Position = 1)]
-        [object]$webSession
+        [Microsoft.PowerShell.Commands.WebRequestSession]$session
     )
     Write-Host $(Get-Date -Format HH:mm:ss.fff)
     Write-Host "requesting $url ..."
     try { 
-        $request = Invoke-WebRequest $url -WebSession $webSession -TimeoutSec 60000 -UseBasicParsing
-        Write-Host "Done" 
-        return $true
+        $response = Invoke-WebRequest $url -WebSession $session -TimeoutSec 60000 -UseBasicParsing
+
+        if ($response.StatusCode -eq "200" ) {
+            Write-Host "Success" 
+            return $true
+        }
     } 
     catch {
         $status = $_.Exception.Response.StatusCode.Value__

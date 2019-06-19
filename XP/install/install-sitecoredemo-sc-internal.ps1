@@ -70,6 +70,28 @@ Function Install-SitecoreInstallFramework {
         Import-Module SitecoreInstallFramework -Force
     }
 }
+Function Get-SitecoreCredentials{
+    
+    if ($null -eq $global:credentials) {
+        if ([string]::IsNullOrEmpty($devSitecoreUsername)) {
+            $global:credentials = Get-Credential -Message "Please provide dev.sitecore.com credentials"
+        }
+        elseif (![string]::IsNullOrEmpty($devSitecoreUsername) -and ![string]::IsNullOrEmpty($devSitecorePassword)) {
+            $secpasswd = ConvertTo-SecureString $devSitecorePassword -AsPlainText -Force
+            $global:credentials = New-Object System.Management.Automation.PSCredential ($devSitecoreUsername, $secpasswd)
+        }
+        else {
+            throw "Credentials required for download"
+        }
+    }
+    $user = $global:credentials.GetNetworkCredential().UserName
+    $password = $global:credentials.GetNetworkCredential().Password
+
+    Invoke-RestMethod -Uri https://dev.sitecore.net/api/authorization -Method Post -ContentType "application/json" -Body "{username: '$user', password: '$password'}" -SessionVariable loginSession -UseBasicParsing 
+    $global:loginSession = $loginSession
+    
+}
+
 Function Install-Modules {
 
     $bootLoaderPackagePath = [IO.Path]::Combine( $assets.sitecoreazuretoolkit, "resources\9.1.0\Addons\Sitecore.Cloud.Integration.Bootload.wdp.zip")
@@ -82,6 +104,7 @@ Function Install-Modules {
         SharedConfigurationPath         = $sharedResourcePath
         AssetsJson                      = $assetsJson
         ModuleId                        = "sd"
+        LoginSession                    = $global:loginSession 
         SiteName                        = $site.hostName
         WebRoot                         = $site.webRoot
         XConnectSiteName                = $xConnect.siteName
@@ -108,6 +131,7 @@ Function Install-Modules {
 
 Import-Module (Join-Path $assets.sharedUtilitiesRoot "assets\modules\SharedInstallationUtilities\SharedInstallationUtilities.psm1") -Force
 Install-SitecoreInstallFramework
+Get-SitecoreCredentials
 Install-Modules
 $StopWatch.Stop()
 $StopWatch

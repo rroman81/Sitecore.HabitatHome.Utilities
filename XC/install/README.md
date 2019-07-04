@@ -33,7 +33,7 @@ Still in an elevated PowerShell session
 > **KNOWN ISSUE:** Automatic download of assets is current not working as expected.
 > 
 > **WORKAROUND:** Download the following assets and place them in the indicated folders:
-> - [Sitecore.Commerce.2018.07-2.2.126.zip](https://dev.sitecore.net/~/media/F374366CA5C649C99B09D35D5EF1BFCE.ashx) - `xc/install/assets/downloads`
+> - [Sitecore.Commerce.2019.04-3.0.163.zip](https://dev.sitecore.net/~/media/EF8EE376257142B4BDFAFF7EB1E1CA3E.ashx) - `xc/install/assets/downloads`
 > - [Habitat Home Product Images.zip](https://sitecore.box.com/shared/static/bjvge68eqge87su5vg258366rve6bg5d.zip) - `xc/install/assets/Commerce`
 
 Once the above files have been downloaded, these are **_2 options_** to install the Sitecore Experience Commerce

@@ -142,7 +142,7 @@ Function Confirm-Prerequisites {
         #Enable Contained Databases
         Write-Host "Enable contained databases" -ForegroundColor Green
         $params = @{
-            Path             = (Join-Path $$sharedResourcePath "enable-contained-databases.json")
+            Path             = (Join-Path $sharedResourcePath "enable-contained-databases.json")
             SqlServer        = $sql.server
             SqlAdminUser     = $sql.adminUser 
             SqlAdminPassword = $sql.adminPassword

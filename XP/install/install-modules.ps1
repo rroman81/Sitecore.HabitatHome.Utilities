@@ -3,7 +3,7 @@ Param(
     [string] $LogFolder = ".\logs\",
     [string] $LogFileName = "install-modules.log",
     [string] $devSitecoreUsername,
-    [securestring] $devSitecorePassword
+    [string] $devSitecorePassword
 )
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
